@@ -57,8 +57,9 @@ class PeerTalkClient
         std::atomic<bool> received_new_message_{ false };
         bool is_connected_{ false };
         int socket_handle_{ -1 };
-        std::mutex receiving_message_mutex_;
+        std::mutex update_message_mutex_;
         std::vector<uint8_t> message_buffer_;
+        std::vector<uint8_t> temp_message_buffer_;
 
 
         bool connect_to_device_();
