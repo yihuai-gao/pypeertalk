@@ -24,6 +24,8 @@ struct PeerTalkHeader
     uint32_t body_size;
 };
 
+PeerTalkHeader get_peer_talk_header(uint8_t* buffer);
+
 
 class DeviceInfo
 {

@@ -3,6 +3,15 @@
 namespace pypeertalk
 {
 
+PeerTalkHeader get_peer_talk_header(uint8_t* buffer)
+{
+    uint32_t ns_error = buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3];
+    uint32_t frame_type = buffer[4] << 24 | buffer[5] << 16 | buffer[6] << 8 | buffer[7];
+    uint32_t frame_tag = buffer[8] << 24 | buffer[9] << 16 | buffer[10] << 8 | buffer[11];
+    uint32_t body_size = buffer[12] << 24 | buffer[13] << 16 | buffer[14] << 8 | buffer[15];
+    return PeerTalkHeader{ns_error, frame_type, frame_tag, body_size};
+}
+
 std::vector<DeviceInfo> get_connected_devices()
 {
     usbmuxd_device_info_t* device_info_list;
@@ -91,8 +100,6 @@ pybind11::bytes PeerTalkClient::get_latest_message(int timeout_ms)
 
 uint32_t PeerTalkClient::receive_whole_buffer_(int socket_handle, uint8_t* output_buffer, uint32_t num_bytes_to_read)
 {
-    printf("Receiving %d bytes\n", num_bytes_to_read);
-    std::lock_guard<std::mutex> guard(receiving_message_mutex_);
     uint32_t num_total_received_bytes = 0;
     while ( num_total_received_bytes < num_bytes_to_read )
     {
@@ -113,20 +120,27 @@ void PeerTalkClient::run_communication_thread_()
 
     while ( is_connected_ )
     {
-        PeerTalkHeader header;
         uint32_t num_bytes_to_read = sizeof(PeerTalkHeader);
         uint8_t* buffer = new uint8_t[num_bytes_to_read];
         receive_whole_buffer_(socket_handle_, buffer, num_bytes_to_read);
-        memcpy(&header, buffer, sizeof(PeerTalkHeader));
+        PeerTalkHeader header = get_peer_talk_header(buffer);
         delete[] buffer;
+
 
         if ( header.body_size > message_buffer_.size() )
         {
             message_buffer_.resize(header.body_size);
         }
         received_new_message_.store(false);
-        receive_whole_buffer_(socket_handle_, message_buffer_.data(), header.body_size);
+        // auto start_time = std::chrono::steady_clock::now();
+        {
+            std::lock_guard<std::mutex> guard(receiving_message_mutex_);
+            receive_whole_buffer_(socket_handle_, message_buffer_.data(), header.body_size);
+        }
         received_new_message_.store(true);
+        // auto end_time = std::chrono::steady_clock::now();
+        // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        // printf("Receive %u bytes in %dms\n", header.body_size, duration.count());
     }
 }
 
