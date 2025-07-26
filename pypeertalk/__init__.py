@@ -1,1 +1,1 @@
-from .core.pypeertalk_core import *
+from .core.pypeertalk_core import DeviceInfo, PeerTalkClient, get_connected_devices

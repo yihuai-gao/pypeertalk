@@ -11,6 +11,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+// #include <fmt/format.h>
 
 namespace pypeertalk
 {
@@ -32,6 +33,10 @@ class DeviceInfo
     uint32_t handle;
 
     DeviceInfo(uint32_t product_id, std::string udid, uint32_t handle) : product_id(product_id), udid(udid), handle(handle) {}
+    std::string to_string() const{
+        // return fmt::format("DeviceInfo(product_id={}, udid={}, handle={})", product_id, udid, handle);
+        return "DeviceInfo(product_id=" + std::to_string(product_id) + ", udid=" + udid + ", handle=" + std::to_string(handle) + ")";
+    }
 };
 
 std::vector<DeviceInfo> get_connected_devices();

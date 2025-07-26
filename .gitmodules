@@ -1,3 +1,0 @@
-[submodule "third_party/libusbmuxd"]
-	path = third_party/libusbmuxd
-	url = https://github.com/libimobiledevice/libusbmuxd.git

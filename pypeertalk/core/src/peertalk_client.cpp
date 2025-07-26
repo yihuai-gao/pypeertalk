@@ -91,6 +91,7 @@ pybind11::bytes PeerTalkClient::get_latest_message(int timeout_ms)
 
 uint32_t PeerTalkClient::receive_whole_buffer_(int socket_handle, uint8_t* output_buffer, uint32_t num_bytes_to_read)
 {
+    printf("Receiving %d bytes\n", num_bytes_to_read);
     std::lock_guard<std::mutex> guard(receiving_message_mutex_);
     uint32_t num_total_received_bytes = 0;
     while ( num_total_received_bytes < num_bytes_to_read )
