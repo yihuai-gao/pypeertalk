@@ -59,7 +59,6 @@ class PeerTalkClient
         int socket_handle_{ -1 };
         std::mutex update_message_mutex_;
         std::vector<uint8_t> message_buffer_;
-        std::vector<uint8_t> temp_message_buffer_;
 
 
         bool connect_to_device_();

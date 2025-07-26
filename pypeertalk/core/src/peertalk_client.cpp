@@ -82,14 +82,18 @@ pybind11::bytes PeerTalkClient::get_latest_message(int timeout_ms)
         if (received_new_message_.load())
         {
             {
+                auto copy_start_time = std::chrono::steady_clock::now();
                 std::lock_guard<std::mutex> guard(update_message_mutex_);
                 received_new_message_.store(false);
                 pybind11::bytes message_bytes(reinterpret_cast<char *>(message_buffer_.data()), message_buffer_.size());
-                message_buffer_.clear();
+                auto copy_end_time = std::chrono::steady_clock::now();
+                auto copy_duration = std::chrono::duration_cast<std::chrono::milliseconds>(copy_end_time - copy_start_time);
+                printf("get_latest_message: Copy %u bytes in %dms\n", message_buffer_.size(), copy_duration.count());
+                // message_buffer_.clear();
                 return message_bytes;
             }
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
         if (std::chrono::steady_clock::now() - start_time > std::chrono::milliseconds(timeout_ms))
         {
             return pybind11::bytes();
@@ -126,29 +130,20 @@ void PeerTalkClient::run_communication_thread_()
         PeerTalkHeader header = get_peer_talk_header(buffer);
         delete[] buffer;
 
-
-
-        // uint8_t* temp_message_buffer = new uint8_t[header.body_size];
-        if ( header.body_size > temp_message_buffer_.size() )
+        if ( header.body_size > message_buffer_.size() )
         {
-            temp_message_buffer_.resize(header.body_size);
             message_buffer_.resize(header.body_size);
         }
         auto start_time = std::chrono::steady_clock::now();
         {
-            receive_whole_buffer_(socket_handle_, temp_message_buffer_.data(), header.body_size);
+            std::lock_guard<std::mutex> guard(update_message_mutex_);
+            receive_whole_buffer_(socket_handle_, message_buffer_.data(), header.body_size);
+            received_new_message_.store(true);
         }
         auto receive_end_time = std::chrono::steady_clock::now();
 
-        {
-            std::lock_guard<std::mutex> guard(update_message_mutex_);
-            memcpy(message_buffer_.data(), temp_message_buffer_.data(), header.body_size);
-            received_new_message_.store(true);
-        }
-        auto copy_end_time = std::chrono::steady_clock::now();
         auto receive_duration = std::chrono::duration_cast<std::chrono::milliseconds>(receive_end_time - start_time);
-        auto copy_duration = std::chrono::duration_cast<std::chrono::milliseconds>(copy_end_time - receive_end_time);
-        printf("Receive %u bytes in %dms, copy %d bytes in %dms\n", header.body_size, receive_duration.count(), header.body_size, copy_duration.count());
+        printf("Receive %u bytes in %dms\n", header.body_size, receive_duration.count());
     }
 }
 

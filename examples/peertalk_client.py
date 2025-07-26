@@ -13,5 +13,4 @@ if len(devices) > 0:
         # current_timestamp = time.time()
         # print(f"Time interval: {current_timestamp - last_timestamp:.3f}s, fps: {1 / (current_timestamp - last_timestamp):.3f}, message size: {len(message)}")
         # last_timestamp = current_timestamp
-        # print(len(message))
         time.sleep(1)
