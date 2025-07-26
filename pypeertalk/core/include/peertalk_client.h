@@ -26,6 +26,7 @@ struct PeerTalkHeader
 
 PeerTalkHeader get_peer_talk_header(uint8_t* buffer);
 
+// void interruptable_sleep(int ms);
 
 class DeviceInfo
 {
@@ -55,6 +56,7 @@ class PeerTalkClient
         DeviceInfo device_;
         int port_;
         std::atomic<bool> received_new_message_{ false };
+        int received_message_size_{ 0 };
         bool is_connected_{ false };
         int socket_handle_{ -1 };
         std::mutex update_message_mutex_;

@@ -12,6 +12,20 @@ PeerTalkHeader get_peer_talk_header(uint8_t* buffer)
     return PeerTalkHeader{ns_error, frame_type, frame_tag, body_size};
 }
 
+// void interruptable_sleep(int ms)
+// {
+//     pybind11::gil_scoped_release release;
+//     const int step = 10;
+//     int slept = 0;
+//     while (slept < ms) {
+//         std::this_thread::sleep_for(std::chrono::milliseconds(step));
+//         slept += step;
+//         if (PyErr_CheckSignals() != 0) {
+//             throw pybind11::error_already_set();  // raises KeyboardInterrupt
+//         }
+//     }
+// }
+
 std::vector<DeviceInfo> get_connected_devices()
 {
     usbmuxd_device_info_t* device_info_list;
@@ -46,6 +60,7 @@ PeerTalkClient::PeerTalkClient(const DeviceInfo &device, int port) : device_(dev
             break;
         }
         printf("Failed to connect to device %s. Retrying...\n", device_.udid.c_str());
+        // interruptable_sleep(1000);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
@@ -85,10 +100,10 @@ pybind11::bytes PeerTalkClient::get_latest_message(int timeout_ms)
                 auto copy_start_time = std::chrono::steady_clock::now();
                 std::lock_guard<std::mutex> guard(update_message_mutex_);
                 received_new_message_.store(false);
-                pybind11::bytes message_bytes(reinterpret_cast<char *>(message_buffer_.data()), message_buffer_.size());
+                pybind11::bytes message_bytes(reinterpret_cast<char *>(message_buffer_.data()), received_message_size_);
                 auto copy_end_time = std::chrono::steady_clock::now();
                 auto copy_duration = std::chrono::duration_cast<std::chrono::milliseconds>(copy_end_time - copy_start_time);
-                printf("get_latest_message: Copy %u bytes in %dms\n", message_buffer_.size(), copy_duration.count());
+                printf("get_latest_message: Copy %u bytes in %dms\n", received_message_size_, copy_duration.count());
                 // message_buffer_.clear();
                 return message_bytes;
             }
@@ -139,6 +154,7 @@ void PeerTalkClient::run_communication_thread_()
             std::lock_guard<std::mutex> guard(update_message_mutex_);
             receive_whole_buffer_(socket_handle_, message_buffer_.data(), header.body_size);
             received_new_message_.store(true);
+            received_message_size_ = header.body_size;
         }
         auto receive_end_time = std::chrono::steady_clock::now();
 
