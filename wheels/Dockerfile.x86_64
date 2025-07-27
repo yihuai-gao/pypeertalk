@@ -22,5 +22,5 @@ RUN cd pypeertalk && \
     pip install -e . && \
     pip wheel . && \
     PACKAGE_VERSION=$(grep "version = " pyproject.toml | sed 's/version = "\(.*\)"/\1/') && \
-    auditwheel repair robotmq-${PACKAGE_VERSION}-${PYTHON_VERSION}-linux_x86_64.whl; \
+    auditwheel repair pypeertalk-${PACKAGE_VERSION}-${PYTHON_VERSION}-linux_x86_64.whl; \
     done
