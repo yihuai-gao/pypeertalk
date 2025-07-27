@@ -1,0 +1,35 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "cmake>=3.10",
+    "cibuildwheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pypeertalk"
+version = "0.1.0"
+authors = [{ name = "Yihuai Gao", email = "yihuai@stanford.edu" }]
+description = "Python binding for PeerTalk client through USB"
+dependencies = [
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/yihuai-gao/pypeertalk"
+
+[tool.setuptools]
+packages = ["pypeertalk"]
+package-data = { pypeertalk = [
+    "core/*.pyi",
+    "py/*.pyi",
+    "core/include/*",
+    "core/src/*",
+    "core/*.so",
+] }
