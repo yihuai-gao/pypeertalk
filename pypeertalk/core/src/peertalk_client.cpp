@@ -1,5 +1,13 @@
 #include "peertalk_client.h"
 
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
+#include <pybind11/numpy.h>
+#include <pybind11/functional.h>
+
+namespace py = pybind11;
+
 namespace pypeertalk
 {
 
@@ -12,19 +20,39 @@ PeerTalkHeader get_peer_talk_header(uint8_t* buffer)
     return PeerTalkHeader{ns_error, frame_type, frame_tag, body_size};
 }
 
-// void interruptable_sleep(int ms)
-// {
-//     pybind11::gil_scoped_release release;
-//     const int step = 10;
-//     int slept = 0;
-//     while (slept < ms) {
-//         std::this_thread::sleep_for(std::chrono::milliseconds(step));
-//         slept += step;
-//         if (PyErr_CheckSignals() != 0) {
-//             throw pybind11::error_already_set();  // raises KeyboardInterrupt
-//         }
-//     }
-// }
+
+void interruptable_sleep(double seconds)
+{
+    py::gil_scoped_release release; // Release the GIL for C++ execution
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_seconds;
+
+    // Sleep in small increments and check for interrupts
+    while (true)
+    {
+        elapsed_seconds = std::chrono::high_resolution_clock::now() - start_time;
+        if (elapsed_seconds.count() >= seconds)
+        {
+            break; // Target sleep duration reached
+        }
+
+        // Calculate remaining time or a small chunk
+        double remaining_seconds = seconds - elapsed_seconds.count();
+        double sleep_chunk = std::min(remaining_seconds, 0.001); // Sleep for 1ms at a time
+
+        std::this_thread::sleep_for(std::chrono::duration<double>(sleep_chunk));
+
+        // Reacquire GIL temporarily to check for Python signals
+        py::gil_scoped_acquire acquire;
+        if (PyErr_CheckSignals() != 0)
+        {
+            // A Python error (like KeyboardInterrupt) is pending
+            throw py::error_already_set(); // Re-raise the Python exception
+        }
+    }
+}
+
 
 std::vector<DeviceInfo> get_connected_devices()
 {
@@ -42,6 +70,7 @@ std::vector<DeviceInfo> get_connected_devices()
             std::string( dev.udid ),
             dev.handle
         );
+        printf("Found device product_id %d, udid %s\n", curr_dev_info.product_id, curr_dev_info.udid.c_str());
 
         available_devices.push_back( curr_dev_info );
     }
@@ -61,7 +90,8 @@ PeerTalkClient::PeerTalkClient(const DeviceInfo &device, int port) : device_(dev
         }
         printf("Failed to connect to device %s. Retrying...\n", device_.udid.c_str());
         // interruptable_sleep(1000);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        interruptable_sleep(1.0);
+        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
@@ -103,7 +133,7 @@ pybind11::bytes PeerTalkClient::get_latest_message(int timeout_ms)
                 pybind11::bytes message_bytes(reinterpret_cast<char *>(message_buffer_.data()), received_message_size_);
                 auto copy_end_time = std::chrono::steady_clock::now();
                 auto copy_duration = std::chrono::duration_cast<std::chrono::milliseconds>(copy_end_time - copy_start_time);
-                printf("get_latest_message: Copy %u bytes in %dms\n", received_message_size_, copy_duration.count());
+                // printf("get_latest_message: Copy %u bytes in %dms\n", received_message_size_, copy_duration.count());
                 // message_buffer_.clear();
                 return message_bytes;
             }
@@ -159,7 +189,7 @@ void PeerTalkClient::run_communication_thread_()
         auto receive_end_time = std::chrono::steady_clock::now();
 
         auto receive_duration = std::chrono::duration_cast<std::chrono::milliseconds>(receive_end_time - start_time);
-        printf("Receive %u bytes in %dms\n", header.body_size, receive_duration.count());
+        // printf("Receive %u bytes in %dms\n", header.body_size, receive_duration.count());
     }
 }
 
