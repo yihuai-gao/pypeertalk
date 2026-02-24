@@ -15,7 +15,12 @@ PYBIND11_MODULE(pypeertalk_core, m)
         .def("__str__", &pypeertalk::DeviceInfo::to_string);
 
     py::class_<pypeertalk::PeerTalkClient>(m, "PeerTalkClient")
-        .def(py::init<const pypeertalk::DeviceInfo &, int>())
+        .def(
+            py::init<const pypeertalk::DeviceInfo &, int, int>(),
+            py::arg("device"),
+            py::arg("port"),
+            py::arg("max_attempts") = 10
+        )
         .def("get_latest_message", &pypeertalk::PeerTalkClient::get_latest_message);
 
     m.def("get_connected_devices", &pypeertalk::get_connected_devices);

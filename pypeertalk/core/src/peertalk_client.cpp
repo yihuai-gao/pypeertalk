@@ -5,6 +5,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
 #include <pybind11/functional.h>
+#include <stdexcept>
 
 namespace py = pybind11;
 
@@ -80,18 +81,34 @@ std::vector<DeviceInfo> get_connected_devices()
     return available_devices;
 }
 
-PeerTalkClient::PeerTalkClient(const DeviceInfo &device, int port) : device_(device), port_(port)
+PeerTalkClient::PeerTalkClient(const DeviceInfo &device, int port, int max_attempts)
+    : device_(device), port_(port)
 {
-    while(true)
+    if (max_attempts == 0)
     {
+        throw std::invalid_argument("max_attempts must be non-zero");
+    }
+
+    int attempts = 0;
+
+    while (true)
+    {
+        ++attempts;
+
         if (connect_to_device_())
         {
             break;
         }
+
+        if (max_attempts > 0 && attempts >= max_attempts)
+        {
+            printf("Failed to connect to device %s after %d attempt(s).\n",
+                   device_.udid.c_str(), attempts);
+            throw std::runtime_error("Failed to connect to device");
+        }
+
         printf("Failed to connect to device %s. Retrying...\n", device_.udid.c_str());
-        // interruptable_sleep(1000);
         interruptable_sleep(1.0);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
