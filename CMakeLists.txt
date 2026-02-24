@@ -27,5 +27,4 @@ add_compile_options(-pthread)
 target_include_directories(pypeertalk_core PRIVATE third_party/libusbmuxd/include)
 target_include_directories(pypeertalk_core PRIVATE pypeertalk/core/include)
 
-
 target_link_libraries(pypeertalk_core PRIVATE usbmuxd)
