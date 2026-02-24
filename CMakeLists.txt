@@ -32,8 +32,4 @@ target_include_directories(pypeertalk_core PRIVATE third_party/libusbmuxd/includ
 target_include_directories(pypeertalk_core PRIVATE pypeertalk/core/include)
 
 
-set_target_properties(pypeertalk_core PROPERTIES 
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/pypeertalk/core"
-)
-
 target_link_libraries(pypeertalk_core PRIVATE usbmuxd)

@@ -53,7 +53,7 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    ext_modules=[CMakeExtension("robotmq.core.robotmq")],
+    ext_modules=[CMakeExtension("pypeertalk.core.pypeertalk_core")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
 )
