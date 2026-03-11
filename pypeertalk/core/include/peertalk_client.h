@@ -47,7 +47,7 @@ std::vector<DeviceInfo> get_connected_devices();
 class PeerTalkClient
 {
     public:
-        PeerTalkClient(const DeviceInfo &device, int port);
+        PeerTalkClient(const DeviceInfo &device, int port, int max_attempts = 10);
         ~PeerTalkClient();
         
         pybind11::bytes get_latest_message(int timeout_ms);

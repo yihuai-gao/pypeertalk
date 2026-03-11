@@ -4,7 +4,7 @@ class DeviceInfo:
     handle: int
 
 class PeerTalkClient:
-    def __init__(self, device: DeviceInfo, port: int):
+    def __init__(self, device: DeviceInfo, port: int, max_attempts: int = 10):
         ...
 
     def get_latest_message(self, timeout_ms: int) -> bytes:
